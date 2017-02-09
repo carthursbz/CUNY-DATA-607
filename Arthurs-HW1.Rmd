@@ -1,0 +1,56 @@
+---
+title: "Basic Loading and Transformation"
+author: "Curwen Arthurs"
+date: "February 8, 2017"
+output: html_document
+---
+
+
+```{r}
+#loading package that contain the functions to be used
+library(RCurl)
+
+
+#creating an object to store the url of the mushrooms site
+url<- "https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data"
+
+
+#getting the text data from the url using the getURL function
+mushrooms_data<- getURL(url)
+
+
+#creating a data frame for the mushrooms data and
+#using textConnection function to link text data from the mushrooms_data object
+mushrooms_df<- read.csv(textConnection(mushrooms_data), header=F, stringsAsFactors = FALSE)
+
+#creating a new mushrooms_df with only 5 columns 
+mushrooms_df<- mushrooms_df[,c(1,5,9,17,23)]
+
+#renaming columns using the colnames function
+colnames(mushrooms_df)<- c("class","bruises","gill_size","veil_type","habitat")
+
+#renaming values in class column
+mushrooms_df$class[mushrooms_df$class=="e"] <- "edible"
+mushrooms_df$class[mushrooms_df$class=="p"] <- "poisonous"
+
+#renaming values in bruises column
+mushrooms_df$bruises[mushrooms_df$bruises=="t"] <- "yes"
+mushrooms_df$bruises[mushrooms_df$bruises=="f"] <- "no"
+
+#renaming values in gill_size column
+mushrooms_df$gill_size[mushrooms_df$gill_size=="b"] <- "broad"
+mushrooms_df$gill_size[mushrooms_df$gill_size=="n"] <- "narrow"
+
+#renaming values in veil_type column
+mushrooms_df$veil_type[mushrooms_df$veil_type=="p"] <- "partial"
+mushrooms_df$veil_type[mushrooms_df$veil_type=="u"] <- "universal"
+
+#renaming values in habitat column
+mushrooms_df$habitat[mushrooms_df$habitat=="g"] <- "grasses"
+mushrooms_df$habitat[mushrooms_df$habitat=="l"] <- "leaves"
+mushrooms_df$habitat[mushrooms_df$habitat=="m"] <- "meadows"
+mushrooms_df$habitat[mushrooms_df$habitat=="p"] <- "paths"
+mushrooms_df$habitat[mushrooms_df$habitat=="u"] <- "urban"
+mushrooms_df$habitat[mushrooms_df$habitat=="w"] <- "waste"
+mushrooms_df$habitat[mushrooms_df$habitat=="d"] <- "woods"
+```
