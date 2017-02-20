@@ -1,0 +1,101 @@
+---
+title: "R Character Manipulation and Date Processing"
+author: "Curwen Arthurs"
+date: "February 19, 2017"
+output: html_document
+---
+
+## Load libraries to use.
+
+```{r}
+library(stringr)
+library(RCurl)
+library(XML)
+```
+
+## Create string vector containing phone numbers and names.
+
+```{r}
+raw.data <-"555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev. Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson, Homer5553642Dr. Julius Hibbert"
+
+name<- unlist(str_extract_all(raw.data, "[[:alpha:]., ]{2,}"))
+```
+
+## Create subset of this vector that has only names and call it name.
+
+3. (a) Use the tools of this chapter to rearrange the vector so that all elements conform to
+the standard first_name last_name.
+
+```{r}
+char2<- str_replace(name[[2]], "([[:alpha:]]{5}.) ([[:alpha:]]{1}.) ([[:alpha:]]{10})" , "\\3 \\2 \\1")
+char5<- str_replace(name[[5]], "([[:alpha:]]{7}.) ([[:alpha:]]{5})" , "\\2 \\1")
+name2<- str_replace(c(name[[1]], char2, name[[3]], name[[4]], char5, name[[6]]), ",", "")
+name2
+```
+
+
+3. (b) Construct a logical vector indicating whether a character has a title (i.e., Rev. and
+Dr.).
+
+```{r}
+str_detect(name, "[[:alpha:]]{2,}\\.")
+```
+
+3. (c) Construct a logical vector indicating whether a character has a second name.
+
+```{r}
+str_detect(name, "[[:alpha:]]{4}.+[[:alpha:]].+[[:alpha:]]{10}")
+```
+
+
+
+
+4. (a) [0-9]+\\$ - this pattern is for any amount of digits between 0-9 followed by the $ sign. Can be used to subset currency information for dollar currencies.  
+
+```{r}
+str_view_all(c("10£","100$BZ", "1000\u20AC","1000$US"), "[0-9]+\\$")
+```
+
+4. (b) \\b[a-z]{1,4}\\b - this pattern matches lower case words with of length 1 to 4 characters.
+
+```{r}
+str_view_all(c("Copy the introductory example. The vector name stores the extracted names"), "\\b[a-z]{1,4}\\b", match = TRUE)
+```
+
+4. (c) .*?\\.txt$ - this patern looks at strings that end with ".txt". Can be used to subset text files.  
+
+```{r}
+str_view_all(c("name.rmd","name.doc", "name.xlsx","name.txt",".txt"), ".*?\\.txt$")
+```
+
+4. (d) \\d{2}/\\d{2}/\\d{4} - this pattern matches dates in the formatt mm/dd/yyyy or dd/mm/yyyy
+
+```{r}
+str_view_all(c("19/02/2017","19th February, 2017","19-02-2017", "Feb.19.2017","02/19/2017 10:30:15"), "\\d{2}/\\d{2}/\\d{4}")
+```
+
+4. (e) <(.+?)>.+?</\\1> - this pattern matches html tags and their contents.
+
+```{r}
+webpage <- getURL("http://global.nba.com/wp-content/include/global/splash_page/promo.html?gr=www", followlocation=TRUE)
+unlist(str_extract_all(webpage, "<(.+?)>.+?</\\1>"))
+```
+
+9. The following code hides a secret message. Crack it with R and regular expressions.
+
+```{r}
+# Source "https://www.r-bloggers.com/htmltotext-extracting-text-from-html-via-xpath/"
+# download html
+html <- getURL("http://www.r-datacollection.com/materials/regex/code_exercise.txt", followlocation = TRUE)
+ 
+# parse html
+doc = htmlParse(html, asText=TRUE)
+code_exercise <- xpathSApply(doc, "//p", xmlValue)
+cat(paste(code_exercise, collapse = "\n"))
+
+#this code extracts all the capital letters, . and ! from the code_exercise text
+#it then concatenates all the elements together into 1 string and finally replaces the "." separators with blank spaces  
+str_replace_all(str_c(unlist(str_extract_all(code_exercise, "[A-Z]|\\.|!")), collapse = ""), "\\.", " ")
+```
+
+
