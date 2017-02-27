@@ -1,0 +1,61 @@
+---
+title: "Project1"
+author: "Curwen Arthurs"
+date: "February 26, 2017"
+output: html_document
+---
+
+#Load packages to use
+
+```{r}
+library(utils)
+library(RCurl)
+library(stringr)
+library(dplyr)
+```
+
+
+```{r}
+data<- readLines("C:/CUNYSPS/tournamentinfo.txt")
+```
+
+```{r}
+data2<- subset(data, unlist(str_detect(data,"-----------------------------------------------------------------------------------------"))=="FALSE")
+```
+
+```{r}
+data3<- subset(data2, unlist(str_detect(str_trim(data2),"^[0-9]"))=="TRUE")
+data3.1<- str_replace_all(data3, "[WLDBUXH] +?", "")
+```
+
+```{r}
+data4<- subset(data2, unlist(str_detect(str_trim(data2),"^[A-Z][A-Z]"))=="TRUE")
+data4.1<- str_replace_all(data4, "[0-9]{8} \\/ R: ", "")
+data4.2<- str_replace_all(data4.1, "\\->.+", "")
+data4.3<- str_replace_all(data4.2, "[A-Z][0-9]+", "")
+```
+
+
+```{r}
+table<- read.table(textConnection(data3.1), header = FALSE, sep = "|")
+table1<- table[,1:10]
+colnames(table1)<- c("PlayerID","Player Name","Total Points","Round 1","Round 2", "Round 3", "Round 4", "Round 5", "Round 6", "Round 7")
+```
+
+```{r}
+table2<- read.table(textConnection(data4.3), header = FALSE, sep = "|")
+colnames(table2)<- c("Player State","Player Pre Rating")
+table2$PlayerID<- c(1:64) 
+```
+
+
+```{r}
+table3<- inner_join(table1, table2, by = "PlayerID")
+table4<- table3[,c(2,11,3,12)]
+```
+
+
+```{r}
+write.table(table4, "C:/CUNYSPS/data.csv", sep = ",", row.names=FALSE, col.names=FALSE, na="")
+```
+
