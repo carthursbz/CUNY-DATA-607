@@ -1,0 +1,53 @@
+---
+title: "Working with Tidy Data"
+author: "Curwen Arthurs"
+date: "March 5, 2017"
+output: html_document
+---
+
+## Load libraries to use.
+
+```{r}
+library(tidyr)
+library(dplyr)
+```
+
+## Import Arrival_delays.csv file
+
+```{r}
+#this file was created using excel by manually entering the data into a worksheet and then saving it as a comma delimited.
+
+raw_data<- read.csv("C:/CUNYSPS/Spring 2017/Data Acquisition Management/Week5/Assignments/Arrival_delays.csv", skip = 1, stringsAsFactors = FALSE)  # read csv file, start reading from line 2 by setting parameter skip = 1
+
+colnames(raw_data[1])<- c("Airline")
+
+#duplicating the airline name for the delay row
+raw_data[3,1]="ALASKA"
+raw_data[6,1]="AM WEST"
+```
+
+```{r}
+#Remove blank rows
+table1<- filter(raw_data, X.1 > "") #using Los Angeles column select all rows that are non blank
+```
+
+```{r}
+#transforming the table; first converts columns to rows then splits arrival/delay column into 2 columns
+table3<- 
+  table1 %>%
+  gather("Destination", "n", 3:7) %>%
+  spread("X.1","n") 
+table3
+```
+
+```{r}
+#takes table 3 gives summary data
+table4<-
+table3 %>%
+rename(Airline = X) %>%
+group_by(Airline) %>% 
+summarise(del_mean = mean(delayed), del_sum = sum(delayed), ontime_mean = mean(on time), ontime_sum = sum(on time))
+table4
+```
+
+
