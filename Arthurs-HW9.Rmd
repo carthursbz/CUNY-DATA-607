@@ -1,0 +1,109 @@
+---
+title: "Assignment - Web APIs"
+author: "Curwen Arthurs"
+date: "April 2, 2017"
+output: html_document
+---
+
+## Loading Libraries to use
+```{r}
+library(httr)
+library(jsonlite)
+```
+
+
+## Exploring the New York Times API
+
+Anyone wishing to call a NYTimes API must register and requset an API key.
+
+http://developer.nytimes.com/docs
+
+The Times offers APIs in the following categories:
+
+- Archive
+
+- Article Search
+
+- Books
+
+- Community
+
+- Geographic
+
+- Most Popular
+
+- Movie Reviews
+
+- Semantic
+
+- Times Newswire
+
+- TimesTags
+
+- Top Stories
+
+
+After browsing through each of the categories I decided to use the Article Search API category.
+
+## ABOUT THE API
+
+The NYT Article Search API allows you to search more than 2.8 million New York Times articles from 1981 to today, retrieving headlines, abstracts, lead paragraphs and links to associated multimedia.
+
+The API supports the following type of searching: 
+- Standard keyword searching
+- Date range: all articles from X date to Y date
+- Field search: search within any number of given fields, e.g., title:obama byline:dowd
+- Conjunction and disjunction (AND and NOT) operations, e.g., baseball yankees -"red sox"
+- Ordering by closest (variable ranking algorithms), newest and oldest
+
+
+
+## Load the API
+
+#Parameters
+
+```{r, echo = false}
+apikey<- c("63c7bd12f65341b38d7d810a87973ae1")
+baseurl<- "https://api.nytimes.com/svc/search/v2/articlesearch.json?"
+terms<- c("Terrorist+Attacks")
+bdate<- c("19980101")
+edate<- c("20010910")
+```
+
+
+## Create url
+
+```{r}
+nytsearch.url<- paste0(baseurl, "q=", terms, "&", bdate, "&", edate, "&", "api-key=", apikey)
+
+nytsearch.url
+```
+
+
+
+## Parse the Articles
+
+```{r}
+
+#store all pages in a list first
+pages <- list()
+
+#create a basic loop to store the results of each page call, for a total of 94 
+for(i in 0:93){
+  mydata <- fromJSON(paste0(nytsearch.url, "&page=", i))
+  message("Retrieving page ", i)
+  pages[[i+1]] <- mydata$response
+  Sys.sleep(1) # sleep for 1 second in between calls to avoid HTTP 429 error
+}
+
+#combine all into one
+#response<- rbind.pages(pages[sapply(pages, length)>0])
+```
+
+
+## Convert to data frame
+
+```{r}
+nytsearchdf<- as.data.frame(pages)
+```
+
