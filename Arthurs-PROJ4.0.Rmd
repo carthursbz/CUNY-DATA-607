@@ -1,0 +1,187 @@
+---
+title: "DATA 607 PROJECT 4"
+author: "Curwen Arthurs"
+date: "April 15, 2017"
+output: html_document
+---
+
+#WEEK 10: DOCUMENT CLASSIFICATION
+
+For this project I will be using the spamham dataset available here:
+http://www.dt.fee.unicamp.br/~tiago/smsspamcollection/
+
+
+
+
+#LOADING PACKAGES TO USE
+
+```{r}
+library(tm) #text mining will be used to create a Document-Term Matrix
+library(RTextTools) # for all classifying models
+library(dplyr)
+library(wordcloud)
+library(caret)
+library(e1071) # for the Naive Bayes modelling
+```
+
+
+
+
+#READING AND PREPARING THE DATA
+
+First download the compressed .zip file from here http://www.dt.fee.unicamp.br/~tiago/smsspamcollection/smsspamcollection.zip
+and unzip the text file in the directory you will be working in.
+
+```{r}
+#specify the file path. 
+file<- "C:/CUNYSPS/Spring 2017/Data Acquisition Management/Week10/smsspamcollection/SMSSpamCollection.txt"
+
+sms<- read.table(file, header=FALSE, sep="\t", quote="", stringsAsFactors=FALSE)
+
+names(sms) <- c("type", "text")
+sms$type <- factor(sms$type)
+
+# randomizing
+set.seed(12358)
+sms<- sms[sample(nrow(sms)),]
+str(sms)
+
+```
+
+
+```{r}
+#create the corpus
+sms_corpus<- Corpus(VectorSource(sms$text))
+
+```
+
+
+```{r}
+#cleaning corpus converting and removing to improve performance of models
+clean_corpus<- sms_corpus %>%
+    tm_map(content_transformer(tolower)) %>%  #change text to lower cases 
+    tm_map(removePunctuation) %>%  #remove punctuations
+    tm_map(removeNumbers) %>%  #remove numbers
+    tm_map(stripWhitespace) %>%  #strip extra whitespaces
+    tm_map(removeWords, stopwords())  #remove stop words
+
+#inspect the first 3 rows of the cleaned corpus
+inspect(clean_corpus[1:3])
+
+```
+
+
+
+#TOKENIZE THE CORPUS
+
+```{r}
+sms_dtm<- DocumentTermMatrix(clean_corpus)
+inspect(sms_dtm[1:4, 30:35])
+```
+
+
+#LOOKING AT THE DIFFERENCIES USING WORDCLOUD
+
+Using word cloud we can see that ham has more meaningful words than spam.
+
+```{r}
+spam_indices <- which(sms$type == "spam")
+spam_indices[1:3]
+
+ham_indices <- which(sms$type == "ham")
+ham_indices[1:3]
+
+
+wordcloud(clean_corpus[ham_indices], min.freq=110)
+wordcloud(clean_corpus[spam_indices], min.freq=110)
+```
+
+
+
+
+#CLASSIFICATION MODEL WITH NAIVE BAYES
+
+Divide corpus into training and test data using 75% for training and 25% for testing using the createDataPartition function.
+
+
+```{r}
+train_index <- createDataPartition(sms$type, p=0.75, list=FALSE)
+sms_train <- sms[train_index,]
+sms_test <- sms[-train_index,]
+
+sms_dtm_train <- sms_dtm[train_index,]
+sms_dtm_test <- sms_dtm[-train_index,]
+
+sms_corpus_train<- clean_corpus[train_index]
+sms_corpus_test<- clean_corpus[-train_index]
+
+```
+
+
+Create a dictionary of terms that we will use to pick terms that appear at least 5 times in the training document term matrix. 
+
+```{r}
+five_times_words<- findFreqTerms(sms_dtm_train, 5)
+
+#Create document-term matrices using frequent terms
+sms_train2<- DocumentTermMatrix(sms_corpus_train, control=list(dictionary = five_times_words))
+
+sms_test2<- DocumentTermMatrix(sms_corpus_test, control=list(dictionary = five_times_words))
+
+```
+
+
+Convert the numeric entries in the term matrices into factors that indicate whether the term is present or not.
+
+```{r}
+convert_count<- function(x) {
+  y<- ifelse(x > 0, 1,0)
+  y<- factor(y, levels=c(0,1), labels=c("No", "Yes"))
+  y
+}
+
+sms_train2<- apply(sms_train2, 2, convert_count)
+sms_test2<- apply(sms_test2, 2, convert_count)
+
+```
+
+
+
+#TRAINING PREDICTION MODEL
+
+
+```{r}
+#creating Naive Bayes classifier
+sms_classifier <- naiveBayes(sms_train2, factor(sms_train$type))
+
+```
+
+
+
+#PREDICTIONS USING THE TEST DATA
+
+```{r}
+#predicts the classifications of messages in the test set based on the probabilities generated with the training set.
+sms_test_pred <- predict(sms_classifier, newdata=sms_test2)
+
+#generate table
+table(sms_test_pred, sms_test$type)
+
+```
+
+#MODEL PERFORMANCE
+
+Accuracy of spam classification = 87%
+
+Accuracy of ham classification = 92%
+
+Fairly good filter.
+
+
+#REFERENCIES
+
+https://www3.nd.edu/~steve/computing_with_data/20_text_mining/text_mining_example.html#/
+
+
+
+
